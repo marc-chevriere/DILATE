@@ -1,5 +1,4 @@
 __pycache__/
-Traffic/
-*.pdf
-*.png
+data/Traffic/
 .DS_Store
+notebooks/

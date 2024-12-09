@@ -32,12 +32,10 @@ def swinging_doors(data, epsilon):
 
 
 def mae(ramp_approx_1, ramp_approx_2):
-    return np.mean(np.abs(ramp_approx_1-ramp_approx_2))
+    return np.mean(np.abs(ramp_approx_1 - ramp_approx_2))
 
 
 def ramp_score(true_series, predicted_series, epsilon):
     ramp_approx_1 = swinging_doors(true_series, epsilon)
     ramp_approx_2 = swinging_doors(predicted_series, epsilon)
-    print(ramp_approx_1, ramp_approx_2, "\n")
-    print(mae(ramp_approx_1, ramp_approx_2), "\n")
     return mae(ramp_approx_1, ramp_approx_2)
