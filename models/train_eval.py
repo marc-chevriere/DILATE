@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 
+from models.seq2seq import EncoderRNN, DecoderRNN, Net_GRU
 from loss.dilate_loss import dilate_loss
 from tslearn.metrics import dtw_path
 from eval.eval_metrics import ramp_score_batch, hausdorff_distance_batch
@@ -100,3 +101,213 @@ def eval_model(net, loader, device):
 
     return final_mse, final_dtw, final_tdi, final_hausdorff, final_ramp
 
+
+def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainloader, validloader, testloader, device, n_epochs, gamma, alpha):
+    if training:
+        print("-"*130)
+        print("TRAINING")
+        print("-"*130)
+        print("DILATE")
+        train_model(
+            net_gru_dilate,
+            loss_type='dilate',
+            learning_rate=0.001,
+            trainloader=trainloader,
+            validloader=validloader,
+            device=device,
+            epochs=n_epochs, 
+            gamma=gamma, 
+            alpha=alpha,
+            print_every=50, 
+            verbose=1,
+            )
+        print("-"*130)
+        print("MSE")
+        train_model(
+            net=net_gru_mse,
+            loss_type='mse',
+            learning_rate=0.001,
+            trainloader=trainloader,
+            validloader=validloader,
+            device=device,
+            epochs=n_epochs, 
+            gamma=gamma, 
+            alpha=alpha,
+            print_every=50, 
+            verbose=1,
+            )
+        print("-"*130)
+        print("sDTW")
+        train_model(
+            net=net_gru_dtw,
+            loss_type='dilate',
+            learning_rate=0.001,
+            trainloader=trainloader,
+            validloader=validloader,
+            device=device,
+            epochs=n_epochs, 
+            gamma=gamma, 
+            alpha=1,
+            print_every=50, 
+            verbose=1,
+            )
+        
+        torch.save(net_gru_dilate.state_dict(), 'weights_models/net_gru_dilate.pth')
+        torch.save(net_gru_mse.state_dict(), 'weights_models/net_gru_mse.pth')
+        torch.save(net_gru_dtw.state_dict(), 'weights_models/net_gru_dtw.pth')
+
+    else:
+        print("-"*130)
+        print("LOADING MODELS")
+        net_gru_dilate.load_state_dict(torch.load('weights_models/net_gru_dilate.pth'))
+        net_gru_mse.load_state_dict(torch.load('weights_models/net_gru_mse.pth'))
+        net_gru_dtw.load_state_dict(torch.load('weights_models/net_gru_dtw.pth'))
+
+        net_gru_dilate.eval()
+        net_gru_mse.eval()
+        net_gru_dtw.eval()
+
+    dilate_mse, dilate_dtw, dilate_tdi, dilate_hausdorff, dilate_ramp= eval_model(net_gru_dilate, testloader, device)
+    mse_mse, mse_dtw, mse_tdi, mse_hausdorff, mse_ramp = eval_model(net_gru_mse, testloader, device)
+    dtw_mse, dtw_dtw, dtw_tdi, dtw_hausdorff, dtw_ramp = eval_model(net_gru_dtw, testloader, device)
+    
+    print("-"*130)
+    print("EVALUATION")
+    print("-"*130)
+    print("Eval dilate")
+    print('mse= ', dilate_mse ,
+        ' dtw= ', dilate_dtw ,
+        ' tdi= ', dilate_tdi,
+        ' hausdorff= ', dilate_hausdorff ,
+        ' ramp= ', dilate_ramp) 
+    print("-"*130)
+    print("Eval mse")
+    print('mse= ', mse_mse ,
+        ' dtw= ', mse_dtw ,
+        ' tdi= ', mse_tdi,
+        ' hausdorff= ', mse_hausdorff ,
+        ' ramp= ', mse_ramp) 
+    print("-"*130)
+    print("Eval softDTW")
+    print('mse= ', dtw_mse ,
+        ' dtw= ', dtw_dtw ,
+        ' tdi= ', dtw_tdi,
+        ' hausdorff= ', dtw_hausdorff ,
+        ' ramp= ', dtw_ramp) 
+    print("-"*130)
+
+
+def compare_gammas(gammas, output_length, device, batch_size, trainloader, validloader, testloader, n_epochs):
+    print("-" * 130)
+    print("TRAINING FOR DIFFERENT GAMMAS")
+    
+    metrics = {
+        "gamma": [],
+        "mse": [],
+        "dtw": [],
+        "tdi": [],
+        "hausdorff": [],
+        "ramp": []
+    }
+
+    for gamma in gammas:
+        encoder_dtw = EncoderRNN(input_size=1, hidden_size=128, num_grulstm_layers=1, batch_size=batch_size).to(device)
+        decoder_dtw = DecoderRNN(input_size=1, hidden_size=128, num_grulstm_layers=1, fc_units=16, output_size=1).to(device)
+        net_gru_dtw = Net_GRU(encoder_dtw, decoder_dtw, output_length, device).to(device)
+
+        print("-" * 130)
+        print(f"sDTW with gamma={gamma}")
+        train_model(
+            net=net_gru_dtw,
+            loss_type='dilate',
+            learning_rate=0.001,
+            trainloader=trainloader,
+            validloader=validloader,
+            device=device,
+            epochs=n_epochs, 
+            gamma=gamma, 
+            alpha=1,
+            print_every=50, 
+            verbose=1,
+        )
+        
+        dtw_mse, dtw_dtw, dtw_tdi, dtw_hausdorff, dtw_ramp = eval_model(net_gru_dtw, testloader, device)
+
+        metrics["gamma"].append(gamma)
+        metrics["mse"].append(dtw_mse)
+        metrics["dtw"].append(dtw_dtw)
+        metrics["tdi"].append(dtw_tdi)
+        metrics["hausdorff"].append(dtw_hausdorff)
+        metrics["ramp"].append(dtw_ramp)
+
+        print("-" * 130)
+        print(f"Eval softDTW with gamma={gamma}")
+        print('mse= ', dtw_mse,
+              ' dtw= ', dtw_dtw,
+              ' tdi= ', dtw_tdi,
+              ' hausdorff= ', dtw_hausdorff,
+              ' ramp= ', dtw_ramp) 
+
+        del encoder_dtw, decoder_dtw, net_gru_dtw
+        torch.cuda.empty_cache()
+
+    print("-" * 130)
+    return metrics
+
+
+def compare_alphas(alphas, gamma, output_length, device, batch_size, trainloader, validloader, testloader, n_epochs):
+    print("-" * 130)
+    print("TRAINING FOR DIFFERENT ALPHAS")
+    
+    metrics = {
+        "alpha": [],
+        "mse": [],
+        "dtw": [],
+        "tdi": [],
+        "hausdorff": [],
+        "ramp": []
+    }
+
+    for alpha in alphas:
+        encoder_dilate = EncoderRNN(input_size=1, hidden_size=128, num_grulstm_layers=1, batch_size=batch_size).to(device)
+        decoder_dilate = DecoderRNN(input_size=1, hidden_size=128, num_grulstm_layers=1, fc_units=16, output_size=1).to(device)
+        net_gru_dilate = Net_GRU(encoder_dilate, decoder_dilate, output_length, device).to(device)
+
+        print("-" * 130)
+        print(f"DILATE with alpha={alpha}")
+        train_model(
+            net=net_gru_dilate,
+            loss_type='dilate',
+            learning_rate=0.001,
+            trainloader=trainloader,
+            validloader=validloader,
+            device=device,
+            epochs=n_epochs, 
+            gamma=gamma, 
+            alpha=alpha,
+            print_every=50, 
+            verbose=1,
+        )
+        
+        dilate_mse, dilate_dtw, dilate_tdi, dilate_hausdorff, dilate_ramp = eval_model(net_gru_dilate, testloader, device)
+
+        metrics["alpha"].append(alpha)
+        metrics["mse"].append(dilate_mse)
+        metrics["dtw"].append(dilate_dtw)
+        metrics["tdi"].append(dilate_tdi)
+        metrics["hausdorff"].append(dilate_hausdorff)
+        metrics["ramp"].append(dilate_ramp)
+
+        print("-" * 130)
+        print(f"Eval DILATE with alpha={alpha}")
+        print('mse= ', dilate_mse,
+              ' dtw= ', dilate_dtw,
+              ' tdi= ', dilate_tdi,
+              ' hausdorff= ', dilate_hausdorff,
+              ' ramp= ', dilate_ramp) 
+        
+        del encoder_dilate, decoder_dilate, net_gru_dilate
+        torch.cuda.empty_cache()
+
+    print("-" * 130)
+    return metrics
