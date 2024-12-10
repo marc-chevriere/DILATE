@@ -1,6 +1,10 @@
 import matplotlib.pyplot as plt
+import os
 
-def plot_preds(X_train, y_train, preds):
+def plot_preds(X_train, y_train, preds, save_path="figures", file_name="plot.png"):
+    os.makedirs(save_path, exist_ok=True)
+    
+    save_file = os.path.join(save_path, file_name)
 
     plt.figure(figsize=(24, 12))
 
@@ -22,4 +26,8 @@ def plot_preds(X_train, y_train, preds):
     plt.ylabel("Values")
     plt.legend()
     plt.grid(True)
+
+    plt.savefig(save_file, bbox_inches="tight")
+    print(f"Figure saved to {save_file}")
+
     plt.show()

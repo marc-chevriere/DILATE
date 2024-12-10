@@ -3,6 +3,7 @@ import torch
 import random
 from torch.utils.data import Dataset, DataLoader
 
+
 def create_synthetic_dataset(N, N_input,N_output,sigma):
     # N: number of samples in each split (train, test)
     # N_input: import of time steps in input series
@@ -39,5 +40,22 @@ class SyntheticDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         return (self.X_input[idx,:,np.newaxis], self.X_target[idx,:,np.newaxis]  , self.breakpoints[idx])
+    
+
+def get_synthetic_data(output_length=20):
+    # parameters
+    batch_size = 100
+    N = 500
+    N_input = 20
+    sigma = 0.01
+
+    # Load synthetic dataset
+    X_train_input,X_train_target,X_test_input,X_test_target,train_bkp,test_bkp = create_synthetic_dataset(N,N_input,output_length,sigma)
+    dataset_train = SyntheticDataset(X_train_input,X_train_target, train_bkp)
+    dataset_test  = SyntheticDataset(X_test_input,X_test_target, test_bkp)
+    trainloader = DataLoader(dataset_train, batch_size=batch_size,shuffle=True, num_workers=1)
+    validloader = DataLoader(dataset_test, batch_size=batch_size,shuffle=False, num_workers=1) 
+    testloader  = DataLoader(dataset_test, batch_size=batch_size,shuffle=False, num_workers=1) 
+    return trainloader, validloader, testloader
 
 

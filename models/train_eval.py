@@ -2,7 +2,8 @@ import torch
 import numpy as np
 
 from loss.dilate_loss import dilate_loss
-from tslearn.metrics import dtw, dtw_path
+from tslearn.metrics import dtw_path
+from eval.eval_metrics import ramp_score, hausdorff_distance
 
 
 def train_model(net, loss_type, learning_rate, trainloader, validloader, device, epochs=1000, gamma = 0.001,
@@ -36,8 +37,12 @@ def train_model(net, loss_type, learning_rate, trainloader, validloader, device,
         if(verbose):
             if (epoch % print_every == 0):
                 print('epoch ', epoch, ' loss ',loss.item(),' loss shape ',loss_shape.item(),' loss temporal ',loss_temporal.item())
-                final_mse, final_dtw, final_tdi = eval_model(net, validloader, gamma,verbose=1)
-                print( ' Eval mse= ', final_mse ,' dtw= ', final_dtw ,' tdi= ', final_tdi) 
+                final_mse, final_dtw, final_tdi, final_hausdorff, final_ramp = eval_model(net, validloader, gamma,verbose=1)
+                print(' Eval mse= ', final_mse ,
+                      ' dtw= ', final_dtw ,
+                      ' tdi= ', final_tdi,
+                      ' hausdorff= ', final_hausdorff ,
+                      ' ramp= ', final_ramp) 
   
 
 def eval_model(net, loader, device):   
@@ -45,6 +50,8 @@ def eval_model(net, loader, device):
     losses_mse = []
     losses_dtw = []
     losses_tdi = []   
+    losses_hausdorff = []
+    losses_ramp = []
 
     for i, data in enumerate(loader, 0):
         loss_mse, loss_dtw, loss_tdi = torch.tensor(0),torch.tensor(0),torch.tensor(0)
@@ -74,14 +81,20 @@ def eval_model(net, loader, device):
         loss_dtw = loss_dtw /batch_size
         loss_tdi = loss_tdi / batch_size
 
-        # print statistics
+        loss_hausdorff = hausdorff_distance(true_batch=target, predicted_batch=outputs)
+        loss_ramp = ramp_score(true_batch=target, predicted_batch=outputs)
+
         losses_mse.append( loss_mse.item() )
         losses_dtw.append( loss_dtw )
         losses_tdi.append( loss_tdi )
+        losses_hausdorff.append( loss_hausdorff.item() )
+        losses_ramp.append( loss_ramp.item() )
     
     final_mse = np.array(losses_mse).mean()
     final_dtw = np.array(losses_dtw).mean()
     final_tdi = np.array(losses_tdi).mean()
+    final_hausdorff = np.array(losses_hausdorff).mean()
+    final_ramp = np.array(losses_ramp).mean()
 
-    return final_mse, final_dtw, final_tdi
+    return final_mse, final_dtw, final_tdi, final_hausdorff, final_ramp
 
