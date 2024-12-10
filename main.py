@@ -15,7 +15,7 @@ from visualization.visu import plot_all, plot_metrics_gammas, plot_metrics_vs_al
 def opts() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default="synthetic", help="Dataset to use: 'synthetic', 'traffic' or other")
-    parser.add_argument('--path_traffic', type=str, default="data/traffic/traffic.txt.gz", help="Path to dataset to use: 'synthetic', 'traffic' or other")
+    parser.add_argument('--path_traffic', type=str, default="data/traffic/traffic.txt", help="Path to dataset to use: 'synthetic', 'traffic' or other")
     parser.add_argument('--n_epochs', type=int, default=3, help="Number of epochs")
     parser.add_argument('--gamma', type=str, default="0.01")
     parser.add_argument('--alpha', type=str, default="0.5")

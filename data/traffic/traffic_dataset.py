@@ -14,11 +14,9 @@ def create_windows(data, input_length, output_length):
 
 
 def get_traffic_data(path_data, batch_size=64, output_length=24):
-    with gzip.open(path_data, 'rt') as f:
-        df = pd.read_csv(f, header=None)
+    df = pd.read_csv(path_data, header=None)
 
     time_series = df.iloc[:, 0].values
-
     input_length = 168  # Points passés (1 semaine)
     output_length = 24  # Points futurs (24 heures)
     train_split = 0.6
