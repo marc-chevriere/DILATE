@@ -6,7 +6,7 @@ def plot_preds(X_train, y_train, preds, save_path="figures", file_name="plot.png
     
     save_file = os.path.join(save_path, file_name)
 
-    plt.figure(figsize=(24, 12))
+    plt.figure(figsize=(12, 6))
 
     plt.plot(range(len(X_train)), X_train, label="Past values", color="blue")
     plt.plot(range(len(X_train), len(X_train) + len(y_train)), y_train, label="Actual values", color="green")

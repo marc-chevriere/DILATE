@@ -28,7 +28,7 @@ def create_synthetic_dataset(N, N_input,N_output,sigma):
     return X[0:N,0:N_input], X[0:N, N_input:N_input+N_output], X[N:2*N,0:N_input], X[N:2*N, N_input:N_input+N_output],breakpoints[0:N], breakpoints[N:2*N]
 
 
-class SyntheticDataset(torch.utils.data.Dataset):
+class SyntheticDataset(Dataset):
     def __init__(self, X_input, X_target, breakpoints):
         super(SyntheticDataset, self).__init__()  
         self.X_input = X_input
@@ -39,12 +39,11 @@ class SyntheticDataset(torch.utils.data.Dataset):
         return (self.X_input).shape[0]
 
     def __getitem__(self, idx):
-        return (self.X_input[idx,:,np.newaxis], self.X_target[idx,:,np.newaxis]  , self.breakpoints[idx])
+        return (self.X_input[idx,:,np.newaxis], self.X_target[idx,:,np.newaxis])  # , self.breakpoints[idx])
     
 
-def get_synthetic_data(output_length=20):
+def get_synthetic_data(output_length=20, batch_size = 100):
     # parameters
-    batch_size = 100
     N = 500
     N_input = 20
     sigma = 0.01
@@ -54,8 +53,7 @@ def get_synthetic_data(output_length=20):
     dataset_train = SyntheticDataset(X_train_input,X_train_target, train_bkp)
     dataset_test  = SyntheticDataset(X_test_input,X_test_target, test_bkp)
     trainloader = DataLoader(dataset_train, batch_size=batch_size,shuffle=True, num_workers=1)
-    validloader = DataLoader(dataset_test, batch_size=batch_size,shuffle=False, num_workers=1) 
     testloader  = DataLoader(dataset_test, batch_size=batch_size,shuffle=False, num_workers=1) 
-    return trainloader, validloader, testloader
+    return trainloader, testloader, testloader
 
 

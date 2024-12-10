@@ -1,6 +1,6 @@
 import torch
 
-def hausdorff_distance(true_batch, predicted_batch):
+def hausdorff_distance_batch(true_batch, predicted_batch):
     diff = true_batch.unsqueeze(2) - predicted_batch.unsqueeze(1)  # Shape: (batch_size, 168, 168, 1)
     distances = torch.norm(diff, dim=-1)  # Shape: (batch_size, 168, 168)
 
@@ -9,10 +9,10 @@ def hausdorff_distance(true_batch, predicted_batch):
 
     hausdorff_distances = torch.max(forward_distances, backward_distances)
 
-    return hausdorff_distances
+    return torch.mean(hausdorff_distances)
 
 
-def swinging_doors(data, epsilon):
+def swinging_doors_batch(data, epsilon):
     batch_size, seq_len, _ = data.shape
     SD_ts = torch.zeros_like(data)
     lower_slope = torch.full((batch_size,), float('inf'), device=data.device)
@@ -41,11 +41,11 @@ def swinging_doors(data, epsilon):
     return SD_ts
 
 
-def mae_m(ramp_approx_1, ramp_approx_2):
+def mae_batch(ramp_approx_1, ramp_approx_2):
     return torch.mean(torch.abs(ramp_approx_1 - ramp_approx_2), dim=(1, 2))
 
 
-def ramp_score(true_batch, predicted_batch, epsilon):
-    ramp_approx_1 = swinging_doors(true_batch, epsilon)
-    ramp_approx_2 = swinging_doors(predicted_batch, epsilon)
-    return mae_m(ramp_approx_1, ramp_approx_2)
+def ramp_score_batch(true_batch, predicted_batch, epsilon):
+    ramp_approx_1 = swinging_doors_batch(true_batch, epsilon)
+    ramp_approx_2 = swinging_doors_batch(predicted_batch, epsilon)
+    return torch.mean(mae_batch(ramp_approx_1, ramp_approx_2))
