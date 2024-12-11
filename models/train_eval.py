@@ -8,7 +8,7 @@ from eval.eval_metrics import ramp_score_batch, hausdorff_distance_batch
 
 
 def train_model(net, loss_type, learning_rate, trainloader, validloader, device, epochs=1000, gamma = 0.001,
-                print_every=50, verbose=1, alpha=0.5):
+                print_every=5, verbose=1, alpha=0.5):
     net.train()
     optimizer = torch.optim.Adam(net.parameters(),lr=learning_rate)
     criterion = torch.nn.MSELoss()
@@ -118,7 +118,6 @@ def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainload
             epochs=n_epochs, 
             gamma=gamma, 
             alpha=alpha,
-            print_every=50, 
             verbose=1,
             )
         print("-"*130)
@@ -133,7 +132,6 @@ def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainload
             epochs=n_epochs, 
             gamma=gamma, 
             alpha=alpha,
-            print_every=50, 
             verbose=1,
             )
         print("-"*130)
@@ -148,7 +146,6 @@ def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainload
             epochs=n_epochs, 
             gamma=gamma, 
             alpha=1,
-            print_every=50, 
             verbose=1,
             )
         
@@ -227,7 +224,6 @@ def compare_gammas(gammas, output_length, device, batch_size, trainloader, valid
             epochs=n_epochs, 
             gamma=gamma, 
             alpha=1,
-            print_every=50, 
             verbose=1,
         )
         
@@ -285,7 +281,6 @@ def compare_alphas(alphas, gamma, output_length, device, batch_size, trainloader
             epochs=n_epochs, 
             gamma=gamma, 
             alpha=alpha,
-            print_every=50, 
             verbose=1,
         )
         
