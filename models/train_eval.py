@@ -8,7 +8,7 @@ from eval.eval_metrics import ramp_score_batch, hausdorff_distance_batch
 
 
 def train_model(net, loss_type, learning_rate, trainloader, validloader, device, epochs=1000, gamma = 0.001,
-                print_every=5, verbose=1, alpha=0.5):
+                print_every=50, verbose=1, alpha=0.5):
     net.train()
     optimizer = torch.optim.Adam(net.parameters(),lr=learning_rate)
     criterion = torch.nn.MSELoss()
