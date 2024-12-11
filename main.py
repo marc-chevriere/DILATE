@@ -1,6 +1,8 @@
 import warnings
 import warnings; warnings.simplefilter('ignore')
 import argparse
+import os
+import json
 
 import torch
 import random
@@ -64,8 +66,15 @@ def main():
             testloader=testloader, 
             n_epochs=n_epochs,
             )
+        
+        repertoire = "metrics"
+        fichier_json = os.path.join(repertoire, f"gammas_{args.data}.json")
+        os.makedirs(repertoire, exist_ok=True)
+        with open(fichier_json, "w") as f:
+            json.dump(metrics_gammas, f, indent=4)
+
         if args.viz:
-            plot_metrics_gammas(metrics_gammas)
+            plot_metrics_gammas(metrics_gammas, data=args.data)
 
     elif args.gamma.replace('.', '', 1).isdigit() and args.alpha == "choice":
 
@@ -83,8 +92,14 @@ def main():
             n_epochs=n_epochs,
             )
 
+        repertoire = f"metrics"
+        fichier_json = os.path.join(repertoire, f"alphas_{args.data}.json")
+        os.makedirs(repertoire, exist_ok=True)
+        with open(fichier_json, "w") as f:
+            json.dump(metrics_alphas, f, indent=4)
+
         if args.viz:
-            plot_metrics_vs_alpha(metrics_alphas)
+            plot_metrics_vs_alpha(metrics_alphas, data=args.data)
 
 
     elif args.gamma.replace('.', '', 1).isdigit() and args.alpha.replace('.', '', 1).isdigit():

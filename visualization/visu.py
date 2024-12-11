@@ -70,7 +70,7 @@ def plot_all(net_gru_dilate, net_gru_mse, net_gru_dtw, testloader):
                 i+=1
 
 
-def plot_metrics_gammas(metrics):
+def plot_metrics_gammas(metrics, data):
     gammas = metrics["gamma"]
 
     plt.figure(figsize=(10, 6))
@@ -89,13 +89,13 @@ def plot_metrics_gammas(metrics):
 
     output_dir = "figures/gammas"
     os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, "metrics_plot_gammas.png")
+    output_path = os.path.join(output_dir, f"metrics_plot_gammas_{data}.png")
     plt.savefig(output_path, bbox_inches="tight")
 
     plt.show()
 
 
-def plot_metrics_vs_alpha(metrics):
+def plot_metrics_vs_alpha(metrics, data):
     alphas = metrics["alpha"]
 
     plt.figure(figsize=(12, 8))
@@ -113,7 +113,7 @@ def plot_metrics_vs_alpha(metrics):
 
     output_dir = "figures/alphas"
     os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, "metrics_plot_alphas.png")
+    output_path = os.path.join(output_dir, f"metrics_plot_alphas_{data}.png")
     plt.savefig(output_path, bbox_inches="tight")
 
     plt.show()
