@@ -25,6 +25,6 @@ After determining the best alpha and gamma, compare the DILATE model with models
 `python main.py --data synthetic --n_epochs 5 --gamma 0.01 --alpha 0.2 --viz`
 
 If the models are already trained on this dataset, you can reuse them to save time by disabling training with the following parameter:
-- training: `--train` or `no-train`
+training: `--train` or `no-train`
 
 
