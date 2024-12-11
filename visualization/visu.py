@@ -34,7 +34,7 @@ def plot_preds(X_train, y_train, preds, save_path="figures", file_name="plot.png
     plt.show()
 
 
-def plot_all(net_gru_dilate, net_gru_mse, net_gru_dtw, testloader):
+def plot_all(net_gru_dilate, net_gru_mse, net_gru_dtw, testloader, data):
     gen_test = iter(testloader)
     batches_to_process = 2 
 
@@ -65,7 +65,7 @@ def plot_all(net_gru_dilate, net_gru_mse, net_gru_dtw, testloader):
                     y_true, 
                     {"MSE": preds["MSE"][-1], "DILATE": preds["DILATE"][-1], "sDTW": preds["sDTW"][-1]},
                     save_path="figures/predictions", 
-                    file_name=f"time_series_plot_{(i,k)}.png"
+                    file_name=f"time_series_plot_{(i,k)}_{data}.png"
                 )
                 i+=1
 

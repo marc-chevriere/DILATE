@@ -19,6 +19,8 @@ def opts() -> argparse.ArgumentParser:
     parser.add_argument('--data', type=str, default="synthetic", help="Dataset to use: 'synthetic', 'traffic' or other")
     parser.add_argument('--path_traffic', type=str, default="data/traffic/traffic.txt", help="Path to dataset to use: 'synthetic', 'traffic' or other")
     parser.add_argument('--n_epochs', type=int, default=3, help="Number of epochs")
+    parser.add_argument('--logger', action='store_true', help="Enable logging to wandb")
+    parser.add_argument('--no-logger', dest='logger', action='store_false', help="Disable logging to wandb")
     parser.add_argument('--gamma', type=str, default="0.01")
     parser.add_argument('--alpha', type=str, default="0.5")
     parser.add_argument('--train', action='store_true', help="Enable training")
@@ -37,6 +39,7 @@ def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     random.seed(0)
     n_epochs = args.n_epochs
+    wandb_logger = args.logger
 
     if args.data == "synthetic":
         output_length = 20
@@ -65,6 +68,7 @@ def main():
             validloader=validloader, 
             testloader=testloader, 
             n_epochs=n_epochs,
+            wandb_logger=wandb_logger,
             )
         
         repertoire = "metrics"
@@ -90,6 +94,7 @@ def main():
             validloader=validloader, 
             testloader=testloader, 
             n_epochs=n_epochs,
+            wandb_logger=wandb_logger,
             )
 
         repertoire = f"metrics"
@@ -130,6 +135,7 @@ def main():
             n_epochs=n_epochs, 
             gamma=gamma, 
             alpha=alpha,
+            wandb_logger=wandb_logger,
         )
 
         if args.viz:
@@ -137,7 +143,8 @@ def main():
                 net_gru_dilate=net_gru_dilate, 
                 net_gru_mse=net_gru_mse, 
                 net_gru_dtw=net_gru_dtw, 
-                testloader=testloader)
+                testloader=testloader,
+                data=args.data)
 
     else:
         raise ValueError(f"Invalid value for gamma: {args.gamma}")

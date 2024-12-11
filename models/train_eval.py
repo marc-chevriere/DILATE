@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import wandb
 
 from models.seq2seq import EncoderRNN, DecoderRNN, Net_GRU
 from loss.dilate_loss import dilate_loss
@@ -7,11 +8,17 @@ from tslearn.metrics import dtw_path
 from eval.eval_metrics import ramp_score_batch, hausdorff_distance_batch
 
 
-def train_model(net, loss_type, learning_rate, trainloader, validloader, device, epochs=1000, gamma = 0.001,
-                print_every=50, verbose=1, alpha=0.5):
+def train_model(net, loss_type, learning_rate, trainloader, validloader, device, data, epochs=1000, gamma = 0.001,
+                print_every=50, verbose=1, alpha=0.5, wandb_logger=False):
     net.train()
     optimizer = torch.optim.Adam(net.parameters(),lr=learning_rate)
     criterion = torch.nn.MSELoss()
+
+    if wandb_logger:
+        wandb.init(
+            project="DILATE",
+            name=f"model_{data}_{gamma}_{alpha}",  
+        )
     
     for epoch in range(epochs): 
         for i, data in enumerate(trainloader, 0):
@@ -33,7 +40,20 @@ def train_model(net, loss_type, learning_rate, trainloader, validloader, device,
                   
             optimizer.zero_grad()
             loss.backward()
-            optimizer.step()          
+            optimizer.step()
+
+        if wandb_logger:
+            wandb_logger.log({
+                'epoch': epoch,
+                'train_loss': loss.item(),
+                'loss_shape': loss_shape.item(),
+                'loss_temporal': loss_temporal.item(),
+                'eval_mse': final_mse,
+                'eval_dtw': final_dtw,
+                'eval_tdi': final_tdi,
+                'eval_hausdorff': final_hausdorff,
+                'eval_ramp': final_ramp
+            })          
         
         if(verbose):
             if (epoch % print_every == 0):
@@ -45,6 +65,8 @@ def train_model(net, loss_type, learning_rate, trainloader, validloader, device,
                       ' hausdorff= ', final_hausdorff ,
                       ' ramp= ', final_ramp) 
                 net.train()
+    if wandb_logger:
+        wandb.finish()
   
 
 def eval_model(net, loader, device):  
@@ -102,7 +124,8 @@ def eval_model(net, loader, device):
     return final_mse, final_dtw, final_tdi, final_hausdorff, final_ramp
 
 
-def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainloader, validloader, testloader, device, n_epochs, gamma, alpha):
+def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainloader, 
+                   validloader, testloader, device, n_epochs, gamma, alpha, wandb_logger):
     if training:
         print("-"*130)
         print("TRAINING")
@@ -119,6 +142,7 @@ def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainload
             gamma=gamma, 
             alpha=alpha,
             verbose=1,
+            wandb_logger=wandb_logger,
             )
         print("-"*130)
         print("MSE")
@@ -133,6 +157,7 @@ def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainload
             gamma=gamma, 
             alpha=alpha,
             verbose=1,
+            wandb_logger=wandb_logger,
             )
         print("-"*130)
         print("sDTW")
@@ -147,6 +172,7 @@ def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainload
             gamma=gamma, 
             alpha=1,
             verbose=1,
+            wandb_logger=wandb_logger,
             )
         
         torch.save(net_gru_dilate.state_dict(), 'weights_models/net_gru_dilate.pth')
@@ -194,7 +220,7 @@ def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainload
     print("-"*130)
 
 
-def compare_gammas(gammas, output_length, device, batch_size, trainloader, validloader, testloader, n_epochs):
+def compare_gammas(gammas, output_length, device, batch_size, trainloader, validloader, testloader, n_epochs, wandb_logger):
     print("-" * 130)
     print("TRAINING FOR DIFFERENT GAMMAS")
     
@@ -225,6 +251,7 @@ def compare_gammas(gammas, output_length, device, batch_size, trainloader, valid
             gamma=gamma, 
             alpha=1,
             verbose=1,
+            wandb_logger=wandb_logger,
         )
         
         dtw_mse, dtw_dtw, dtw_tdi, dtw_hausdorff, dtw_ramp = eval_model(net_gru_dtw, testloader, device)
@@ -251,7 +278,7 @@ def compare_gammas(gammas, output_length, device, batch_size, trainloader, valid
     return metrics
 
 
-def compare_alphas(alphas, gamma, output_length, device, batch_size, trainloader, validloader, testloader, n_epochs):
+def compare_alphas(alphas, gamma, output_length, device, batch_size, trainloader, validloader, testloader, n_epochs, wandb_logger):
     print("-" * 130)
     print("TRAINING FOR DIFFERENT ALPHAS")
     
@@ -282,6 +309,7 @@ def compare_alphas(alphas, gamma, output_length, device, batch_size, trainloader
             gamma=gamma, 
             alpha=alpha,
             verbose=1,
+            wandb_logger=wandb_logger,
         )
         
         dilate_mse, dilate_dtw, dilate_tdi, dilate_hausdorff, dilate_ramp = eval_model(net_gru_dilate, testloader, device)
