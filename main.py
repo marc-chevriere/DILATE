@@ -69,6 +69,7 @@ def main():
             testloader=testloader, 
             n_epochs=n_epochs,
             wandb_logger=wandb_logger,
+            data=args.data
             )
         
         repertoire = "metrics"
@@ -95,6 +96,7 @@ def main():
             testloader=testloader, 
             n_epochs=n_epochs,
             wandb_logger=wandb_logger,
+            data=args.data
             )
 
         repertoire = f"metrics"
@@ -136,6 +138,7 @@ def main():
             gamma=gamma, 
             alpha=alpha,
             wandb_logger=wandb_logger,
+            data=args.data,
         )
 
         if args.viz:

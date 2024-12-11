@@ -4,3 +4,4 @@ data/traffic/traffic.txt
 notebooks/
 weights_models/
 figures/
+wandb/
