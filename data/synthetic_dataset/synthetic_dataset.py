@@ -39,7 +39,7 @@ class SyntheticDataset(Dataset):
         return (self.X_input).shape[0]
 
     def __getitem__(self, idx):
-        return (self.X_input[idx,:,np.newaxis], self.X_target[idx,:,np.newaxis])  # , self.breakpoints[idx])
+        return (self.X_input[idx,:,np.newaxis], self.X_target[idx,:,np.newaxis] , self.breakpoints[idx])
     
 
 def get_synthetic_data(output_length=20, batch_size = 100):

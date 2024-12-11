@@ -1,15 +1,25 @@
 import torch
+import numpy as np
+import ruptures as rpt
+from ruptures.metrics import hausdorff
 
-def hausdorff_distance_batch(true_batch, predicted_batch):
-    diff = true_batch.unsqueeze(2) - predicted_batch.unsqueeze(1)  # Shape: (batch_size, 168, 168, 1)
-    distances = torch.norm(diff, dim=-1)  # Shape: (batch_size, 168, 168)
+def calculate_hausdorff_distances(ts_0, ts_1, bkp_1):
+    ts_0 = ts_0.numpy()
+    ts_1 = ts_1.numpy()
+    bkp_1 = bkp_1.numpy()
+    ts_concat = np.concatenate((ts_0, ts_1), axis=1)
+    batch_size, sequence_length, _ = ts_concat.shape
+    hausdorff_distances = []
 
-    forward_distances = torch.max(torch.min(distances, dim=2)[0], dim=1)[0]  # Shape: (batch_size,)
-    backward_distances = torch.max(torch.min(distances, dim=1)[0], dim=1)[0]  # Shape: (batch_size,)
+    for i in range(batch_size):
+        signal = ts_concat[i, :, 0]  
+        true_bkp = np.array([bkp_1[i],sequence_length]) 
+        algo = rpt.Dynp(model="l2").fit(signal)
+        predicted_bkp = np.array(algo.predict(n_bkps=1))
+        hausdorff_dist = hausdorff(true_bkp, predicted_bkp)
+        hausdorff_distances.append(hausdorff_dist)
 
-    hausdorff_distances = torch.max(forward_distances, backward_distances)
-
-    return torch.mean(hausdorff_distances)
+    return np.array(hausdorff_distances).mean()
 
 
 def swinging_doors_batch(data, epsilon):
