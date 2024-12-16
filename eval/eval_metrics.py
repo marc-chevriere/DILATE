@@ -3,11 +3,21 @@ import numpy as np
 import ruptures as rpt
 from ruptures.metrics import hausdorff
 
-def calculate_hausdorff_distances(ts_0, ts_1, bkp_1):
+def detect_anomalies(ts, threshold=3):
+    mean = torch.mean(ts)
+    std = torch.std(ts)
+    anomalies = torch.where((ts > mean + threshold * std) | (ts < mean - threshold * std))[0]
+    last_index = torch.tensor([len(ts) - 1], dtype=torch.long)
+    first_index = torch.tensor([0], dtype=torch.long)
+    anomalies = torch.cat((first_index, anomalies, last_index))
+    
+    return anomalies
+
+def synthetic_hausdorff_distances(ts_0, true, bkp_1):
     ts_0 = ts_0.numpy()
-    ts_1 = ts_1.numpy()
+    true = true.numpy()
     bkp_1 = bkp_1.numpy()
-    ts_concat = np.concatenate((ts_0, ts_1), axis=1)
+    ts_concat = np.concatenate((ts_0, true), axis=1)
     batch_size, sequence_length, _ = ts_concat.shape
     hausdorff_distances = []
 
@@ -21,41 +31,47 @@ def calculate_hausdorff_distances(ts_0, ts_1, bkp_1):
 
     return np.array(hausdorff_distances).mean()
 
-
-def swinging_doors_batch(data, epsilon):
-    batch_size, seq_len, _ = data.shape
-    SD_ts = torch.zeros_like(data)
-    lower_slope = torch.full((batch_size,), float('inf'), device=data.device)
-    upper_slope = torch.full((batch_size,), float('-inf'), device=data.device)
-    start_idx = torch.zeros(batch_size, dtype=torch.long, device=data.device)
-
-    for i in range(1, seq_len):
-        current_lower_slope = (data[:, i, 0] - (data[torch.arange(batch_size), start_idx, 0] - epsilon)) / (i - start_idx)
-        current_upper_slope = (data[:, i, 0] - (data[torch.arange(batch_size), start_idx, 0] + epsilon)) / (i - start_idx)
-
-        lower_slope = torch.min(lower_slope, current_lower_slope)
-        upper_slope = torch.max(upper_slope, current_upper_slope)
-
-        condition = (lower_slope < upper_slope) | (i == seq_len - 1)
-        if condition.any():
-            current_slope = (data[:, i, 0] - data[torch.arange(batch_size), start_idx, 0]) / (i - start_idx)
-            for batch_idx in torch.where(condition)[0]:
-                indices = torch.arange(i - start_idx[batch_idx], device=data.device)
-                SD_ts[batch_idx, start_idx[batch_idx]:i, 0] = current_slope[batch_idx] * indices + data[batch_idx, start_idx[batch_idx], 0]
-
-            start_idx[condition] = i
-            lower_slope[condition] = float('inf')
-            upper_slope[condition] = float('-inf')
-
-    SD_ts[:, -1, 0] = data[:, -1, 0]
-    return SD_ts
+def traffic_hausdorff_distances(ts_0, true, preds):
+    hausdorff_distances = []
+    true_ts = torch.cat((ts_0, true), axis=1)
+    pred_ts = torch.cat((ts_0, preds), axis=1)
+    batch_size, _, _ = true_ts.shape
+    for i in range(batch_size):
+        anomalies_true = detect_anomalies(true_ts[i])
+        anomalies_preds =  detect_anomalies(pred_ts[i])
+        hausdorff_dist = hausdorff(anomalies_true.cpu().numpy(), anomalies_preds.cpu().numpy())
+        hausdorff_distances.append(hausdorff_dist)
+    return np.array(hausdorff_distances).mean()
 
 
-def mae_batch(ramp_approx_1, ramp_approx_2):
-    return torch.mean(torch.abs(ramp_approx_1 - ramp_approx_2), dim=(1, 2))
+def swinging_doors_batch(data_batch, epsilon):
+    batch_size, seq_len, _ = data_batch.size()
+    data_batch = data_batch.squeeze(-1)  
+    SD_ts = torch.zeros_like(data_batch)
+    
+    for b in range(batch_size):
+        data = data_batch[b]
+        lower_slope = float('inf')
+        upper_slope = float('-inf')
+        start_idx = 0
+        
+        for i in range(1, seq_len):
+            lower_slope = min(lower_slope, (data[i] - (data[start_idx] - epsilon)) / (i - start_idx))
+            upper_slope = max(upper_slope, (data[i] - (data[start_idx] + epsilon)) / (i - start_idx))
+            
+            if lower_slope < upper_slope or i == seq_len - 1:
+                current_slope = (data[i] - data[start_idx]) / (i - start_idx)
+                SD_ts[b, start_idx:i] = current_slope
+                start_idx = i
+                lower_slope = float('inf')
+                upper_slope = float('-inf')
+        
+        SD_ts[b, -1] = current_slope
+    
+    return SD_ts.unsqueeze(-1)
 
 
 def ramp_score_batch(true_batch, predicted_batch, epsilon):
     ramp_approx_1 = swinging_doors_batch(true_batch, epsilon)
     ramp_approx_2 = swinging_doors_batch(predicted_batch, epsilon)
-    return torch.mean(mae_batch(ramp_approx_1, ramp_approx_2))
+    return torch.mean(torch.abs(ramp_approx_1-ramp_approx_2))

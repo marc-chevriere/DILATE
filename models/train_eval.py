@@ -5,7 +5,7 @@ import wandb
 from models.seq2seq import EncoderRNN, DecoderRNN, Net_GRU
 from loss.dilate_loss import dilate_loss
 from tslearn.metrics import dtw_path
-from eval.eval_metrics import ramp_score_batch, calculate_hausdorff_distances
+from eval.eval_metrics import ramp_score_batch, synthetic_hausdorff_distances, traffic_hausdorff_distances
 
 
 def train_model(net, loss_type, learning_rate, trainloader, validloader, device, data_type, epochs=1000, gamma = 0.001,
@@ -15,7 +15,7 @@ def train_model(net, loss_type, learning_rate, trainloader, validloader, device,
     criterion = torch.nn.MSELoss()
 
     if wandb_logger:
-        if loss_type=="dilate" and alpha<0.000001:
+        if loss_type=="dilate" and alpha>=1-1e-5:
             name_loss = "sDTW"
         else:
             name_loss = loss_type
@@ -57,7 +57,8 @@ def train_model(net, loss_type, learning_rate, trainloader, validloader, device,
         if(verbose):
             if (epoch % print_every == 0):
                 print('epoch ', epoch, ' loss ',loss.item(),' loss shape ',loss_shape.item(),' loss temporal ',loss_temporal.item())
-                final_mse, final_dtw, final_tdi, final_hausdorff, final_ramp = eval_model(net, validloader, device=device, data_type=data_type)
+                final_mse, final_dtw, final_tdi, final_hausdorff, final_ramp = eval_model(net, validloader, 
+                                                                                          device=device, data_type=data_type)
                 print('Eval mse= ', final_mse ,
                       ' dtw= ', final_dtw ,
                       ' tdi= ', final_tdi,
@@ -111,17 +112,20 @@ def eval_model(net, loader, device, data_type):
                 Dist = 0
                 for i,j in path:
                         Dist += (i-j)*(i-j)
-                loss_tdi += Dist / (N_output*N_output)            
+                loss_tdi += Dist / (N_output*N_output)           
                             
             loss_dtw = loss_dtw /batch_size
             loss_tdi = loss_tdi / batch_size
 
             if data_type=="synthetic":
                 bkps = data[2]
-                loss_hausdorff = calculate_hausdorff_distances(inputs, target, bkps)
+                loss_hausdorff = synthetic_hausdorff_distances(inputs, target, bkps)
+                losses_hausdorff.append( loss_hausdorff.item() )
+            elif data_type=="traffic":
+                loss_hausdorff = traffic_hausdorff_distances(inputs, target, outputs)
                 losses_hausdorff.append( loss_hausdorff.item() )
             else:
-                losses_hausdorff.append( 0 )
+                losses_hausdorff.append(0)
 
             loss_ramp = ramp_score_batch(true_batch=target, predicted_batch=outputs, epsilon=torch.std(target).item())
 
@@ -140,7 +144,8 @@ def eval_model(net, loader, device, data_type):
 
 
 def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainloader, 
-                   validloader, testloader, device, n_epochs, gamma, alpha, wandb_logger, data):
+                   validloader, testloader, device, n_epochs, 
+                   gamma, alpha, wandb_logger, data, eval_every):
     if training:
         print("-"*130)
         print("TRAINING")
@@ -159,6 +164,7 @@ def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainload
             verbose=1,
             wandb_logger=wandb_logger,
             data_type=data,
+            print_every=eval_every,
             )
         print("-"*130)
         print("MSE")
@@ -175,6 +181,7 @@ def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainload
             verbose=1,
             wandb_logger=wandb_logger,
             data_type=data,
+            print_every=eval_every,
             )
         print("-"*130)
         print("sDTW")
@@ -191,6 +198,7 @@ def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainload
             verbose=1,
             wandb_logger=wandb_logger,
             data_type=data,
+            print_every=eval_every,
             )
         
         torch.save(net_gru_dilate.state_dict(), 'weights_models/net_gru_dilate.pth')
@@ -239,7 +247,7 @@ def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainload
 
 
 def compare_gammas(gammas, output_length, device, batch_size, trainloader, 
-                   validloader, testloader, n_epochs, wandb_logger, data):
+                   validloader, testloader, n_epochs, wandb_logger, data, eval_every):
     print("-" * 130)
     print("TRAINING FOR DIFFERENT GAMMAS")
     
@@ -272,6 +280,7 @@ def compare_gammas(gammas, output_length, device, batch_size, trainloader,
             verbose=1,
             wandb_logger=wandb_logger,
             data_type=data,
+            print_every=eval_every,
         )
         
         dtw_mse, dtw_dtw, dtw_tdi, dtw_hausdorff, dtw_ramp = eval_model(net_gru_dtw, testloader, device, data_type=data)
@@ -299,7 +308,7 @@ def compare_gammas(gammas, output_length, device, batch_size, trainloader,
 
 
 def compare_alphas(alphas, gamma, output_length, device, batch_size, trainloader, 
-                   validloader, testloader, n_epochs, wandb_logger, data):
+                   validloader, testloader, n_epochs, wandb_logger, data, eval_every):
     print("-" * 130)
     print("TRAINING FOR DIFFERENT ALPHAS")
     
@@ -332,6 +341,7 @@ def compare_alphas(alphas, gamma, output_length, device, batch_size, trainloader
             verbose=1,
             wandb_logger=wandb_logger,
             data_type=data,
+            print_every=eval_every,
         )
         
         dilate_mse, dilate_dtw, dilate_tdi, dilate_hausdorff, dilate_ramp = eval_model(net_gru_dilate, 

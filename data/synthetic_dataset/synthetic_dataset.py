@@ -56,4 +56,3 @@ def get_synthetic_data(output_length=20, batch_size = 100):
     testloader  = DataLoader(dataset_test, batch_size=batch_size,shuffle=False, num_workers=1) 
     return trainloader, testloader, testloader
 
-

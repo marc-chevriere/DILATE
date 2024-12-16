@@ -39,7 +39,10 @@ def plot_all(net_gru_dilate, net_gru_mse, net_gru_dtw, testloader, data):
     batches_to_process = 2 
 
     for k in range(batches_to_process):
-        test_inputs, test_targets = next(gen_test)
+        if data=="traffic":
+            test_inputs, test_targets = next(gen_test)
+        else:
+            test_inputs, test_targets, _ = next(gen_test)
 
         test_inputs = test_inputs.to(torch.float32)
         test_targets = test_targets.to(torch.float32)

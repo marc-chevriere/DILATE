@@ -27,6 +27,7 @@ def opts() -> argparse.ArgumentParser:
     parser.add_argument('--no-train', dest='train', action='store_false', help="Disable training")
     parser.add_argument('--viz', action='store_true', help="Enable visualization")
     parser.add_argument('--no-viz', dest='viz', action='store_false', help="Disable visualization")
+    parser.add_argument('--eval_every', type=int, default="5")
     
     args = parser.parse_args()
     args = parser.parse_args()
@@ -49,7 +50,7 @@ def main():
     elif args.data == "traffic":
         output_length = 24
         path_data = args.path_traffic
-        batch_size=64
+        batch_size=16
         trainloader, validloader, testloader = get_traffic_data(path_data=path_data, batch_size=batch_size)
 
     else:
@@ -69,7 +70,8 @@ def main():
             testloader=testloader, 
             n_epochs=n_epochs,
             wandb_logger=wandb_logger,
-            data=args.data
+            data=args.data,
+            eval_every=args.eval_every
             )
         
         repertoire = "metrics"
@@ -96,7 +98,8 @@ def main():
             testloader=testloader, 
             n_epochs=n_epochs,
             wandb_logger=wandb_logger,
-            data=args.data
+            data=args.data,
+            eval_every=args.eval_every
             )
 
         repertoire = f"metrics"
@@ -139,6 +142,7 @@ def main():
             alpha=alpha,
             wandb_logger=wandb_logger,
             data=args.data,
+            eval_every=args.eval_every
         )
 
         if args.viz:
