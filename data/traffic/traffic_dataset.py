@@ -15,7 +15,7 @@ def create_windows(data, input_length, output_length, stride=None):
     return np.array(X), np.array(y)
 
 
-def get_traffic_data(path_data = "traffic.txt", batch_size=64, output_length=24):
+def get_traffic_data(path_data, batch_size=64, output_length=24):
     df = pd.read_csv(path_data, header=None)
 
     time_series = df.iloc[:, 0].values

@@ -17,9 +17,8 @@ def create_windows(data, input_length, output_length, stride=None):
     return np.array(X), np.array(y)
 
 def get_electricity_data( batch_size=64, output_length=24):
-    # Download latest version
-    path = kagglehub.dataset_download("fedesoriano/electric-power-consumption")
-    df = pd.read_csv(path+"\\powerconsumption.csv")
+
+    df = pd.read_csv("data/power_consumption/powerconsumption.csv")
     df = df[['Datetime', 'PowerConsumption_Zone1']]
     max_value = df['PowerConsumption_Zone1'].max()
     df['PowerConsumption_Zone1'] = df['PowerConsumption_Zone1'] / max_value
