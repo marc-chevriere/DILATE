@@ -1,0 +1,7 @@
+__pycache__/
+data/traffic/traffic.txt
+.DS_Store
+notebooks/
+weights_models/
+figures/
+wandb/
