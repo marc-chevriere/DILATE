@@ -18,6 +18,7 @@ def opts() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default="synthetic", help="Dataset to use: 'synthetic', 'traffic' or other")
     parser.add_argument('--path_traffic', type=str, default="data/traffic/traffic.txt", help="Path to dataset to use: 'synthetic', 'traffic' or other")
+    parser.add_argument('--stride', type=int, default="30")
     parser.add_argument('--n_epochs', type=int, default=3, help="Number of epochs")
     parser.add_argument('--logger', action='store_true', help="Enable logging to wandb")
     parser.add_argument('--no-logger', dest='logger', action='store_false', help="Disable logging to wandb")
@@ -51,7 +52,9 @@ def main():
         output_length = 24
         path_data = args.path_traffic
         batch_size=64
-        trainloader, validloader, testloader = get_traffic_data(path_data=path_data, batch_size=batch_size)
+        stride = args.stride
+        trainloader, validloader, testloader = get_traffic_data(path_data=path_data, stride=stride, 
+                                                                batch_size=batch_size, output_length=output_length)
 
     else:
         raise ValueError("Invalid dataset")

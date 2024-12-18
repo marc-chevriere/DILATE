@@ -15,7 +15,7 @@ def create_windows(data, input_length, output_length, stride=None):
     return np.array(X), np.array(y)
 
 
-def get_traffic_data(path_data, batch_size=64, output_length=24):
+def get_traffic_data(path_data, stride, batch_size=64, output_length=24):
     df = pd.read_csv(path_data, header=None)
 
     time_series = df.iloc[:, 0].values
@@ -27,7 +27,6 @@ def get_traffic_data(path_data, batch_size=64, output_length=24):
     n_points = len(time_series)
     train_end = int(train_split * n_points)
     valid_end = int((train_split + valid_split) * n_points)
-    stride = 10
 
     # Training
     train_data = time_series[:train_end]
