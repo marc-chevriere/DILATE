@@ -50,7 +50,7 @@ def main():
     elif args.data == "traffic":
         output_length = 24
         path_data = args.path_traffic
-        batch_size=16
+        batch_size=64
         trainloader, validloader, testloader = get_traffic_data(path_data=path_data, batch_size=batch_size)
 
     else:

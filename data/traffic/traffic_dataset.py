@@ -27,7 +27,7 @@ def get_traffic_data(path_data, batch_size=64, output_length=24):
     n_points = len(time_series)
     train_end = int(train_split * n_points)
     valid_end = int((train_split + valid_split) * n_points)
-    stride = (input_length + output_length)//2
+    stride = 10
 
     # Training
     train_data = time_series[:train_end]
