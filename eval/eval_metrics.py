@@ -14,9 +14,9 @@ def detect_anomalies(ts, threshold=3):
     return anomalies
 
 def synthetic_hausdorff_distances(ts_0, true, bkp_1):
-    ts_0 = ts_0.numpy()
-    true = true.numpy()
-    bkp_1 = bkp_1.numpy()
+    ts_0 = ts_0.cpu().numpy()
+    true = true.cpu().numpy()
+    bkp_1 = bkp_1.cpu().numpy()
     ts_concat = np.concatenate((ts_0, true), axis=1)
     batch_size, sequence_length, _ = ts_concat.shape
     hausdorff_distances = []
