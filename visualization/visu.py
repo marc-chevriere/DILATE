@@ -55,10 +55,10 @@ def plot_all(net_gru_dilate, net_gru_mse, net_gru_dtw, net_gru_rrmse, testloader
         preds = {"MSE": [], "DILATE": [], "sDTW": [], "RRMSE": []}
 
         with torch.no_grad():
-            preds_mse_batch = net_gru_mse(test_inputs).squeeze(-1).detach().numpy()
-            preds_dilate_batch = net_gru_dilate(test_inputs).squeeze(-1).detach().numpy()
-            preds_dtw_batch = net_gru_dtw(test_inputs).squeeze(-1).detach().numpy()
-            preds_rrmse_batch = net_gru_rrmse(test_inputs).squeeze(-1).detach().numpy()
+            preds_mse_batch = net_gru_mse(test_inputs).squeeze(-1).detach().cpu().numpy()
+            preds_dilate_batch = net_gru_dilate(test_inputs).squeeze(-1).detach().cpu().numpy()
+            preds_dtw_batch = net_gru_dtw(test_inputs).squeeze(-1).detach().cpu().numpy()
+            preds_rrmse_batch = net_gru_rrmse(test_inputs).squeeze(-1).detach().cpu().numpy()
             i=0
             for ind in random_indices:
                 preds["MSE"].append(preds_mse_batch[ind])
