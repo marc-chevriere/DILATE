@@ -38,6 +38,13 @@ def plot_all(net_gru_dilate, net_gru_mse, net_gru_dtw, net_gru_rrmse, testloader
     gen_test = iter(testloader)
     batches_to_process = 2 
 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    net_gru_dilate = net_gru_dilate.to(device)
+    net_gru_mse = net_gru_mse.to(device)
+    net_gru_dtw = net_gru_dtw.to(device)
+    net_gru_rrmse = net_gru_rrmse.to(device)
+
     for k in range(batches_to_process):
         if data=="traffic":
             test_inputs, test_targets = next(gen_test)
