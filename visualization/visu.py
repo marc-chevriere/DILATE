@@ -53,8 +53,8 @@ def plot_all(net_gru_dilate, net_gru_mse, net_gru_dtw, net_gru_rrmse, testloader
         else:
             test_inputs, test_targets, _ = next(gen_test)
 
-        test_inputs = test_inputs.to(torch.float32)
-        test_targets = test_targets.to(torch.float32)
+        test_inputs = test_inputs.to(torch.float32).to(device)
+        test_targets = test_targets.to(torch.float32).to(device)
 
         batch_size = test_inputs.size(0)
         random_indices = torch.randint(0, batch_size, (1,)) 
