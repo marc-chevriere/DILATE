@@ -23,33 +23,28 @@ def synthetic_hausdorff_distances(ts_0, true, bkp_1):
     return np.array(hausdorff_distances).mean()
 
 def detect_anomalies(ts, threshold=3):
-    device = ts.device  # Détecte automatiquement l'appareil du tenseur
+    device = ts.device  
     mean = torch.mean(ts)
     std = torch.std(ts)
-    anomalies = torch.where((ts > mean + threshold * std) | (ts < mean - threshold * std))[0]
+    anomalies = torch.where((ts > mean + threshold * std) | (ts < mean - threshold * std))[0].to(device)
     last_index = torch.tensor([len(ts) - 1], dtype=torch.long, device=device)
     first_index = torch.tensor([0], dtype=torch.long, device=device)
-    anomalies = torch.cat((first_index, anomalies, last_index))
-    
+    if anomalies.numel() == 0 or anomalies[0] != first_index:
+        anomalies = torch.cat((first_index.to(device), anomalies))
+    if anomalies.numel() == 0 or anomalies[-1] != last_index:
+        anomalies = torch.cat((anomalies, last_index.to(device)))
     return anomalies
 
 def traffic_hausdorff_distances(ts_0, true, preds):
-    device = ts_0.device  
+    hausdorff_distances = []
     true_ts = torch.cat((ts_0, true), axis=1)
     pred_ts = torch.cat((ts_0, preds), axis=1)
     batch_size, _, _ = true_ts.shape
-
-    hausdorff_distances = []
     for i in range(batch_size):
         anomalies_true = detect_anomalies(true_ts[i])
-        anomalies_preds = detect_anomalies(pred_ts[i])
-        
-        anomalies_true_np = anomalies_true.cpu().numpy()
-        anomalies_preds_np = anomalies_preds.cpu().numpy()
-        
-        hausdorff_dist = hausdorff(anomalies_true_np, anomalies_preds_np)
+        anomalies_preds =  detect_anomalies(pred_ts[i])
+        hausdorff_dist = hausdorff(anomalies_true.cpu().numpy(), anomalies_preds.cpu().numpy())
         hausdorff_distances.append(hausdorff_dist)
-    
     return np.array(hausdorff_distances).mean()
 
 
