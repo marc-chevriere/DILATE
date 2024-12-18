@@ -9,11 +9,10 @@ from eval.eval_metrics import ramp_score_batch, synthetic_hausdorff_distances, t
 
 
 def train_model(net, loss_type, learning_rate, trainloader, validloader, device, data_type, epochs=1000, gamma = 0.001,
-                print_every=50, verbose=1, alpha=0.5, wandb_logger=False, delta=1.):
+                print_every=50, verbose=1, alpha=0.5, wandb_logger=False):
     net.train()
     optimizer = torch.optim.Adam(net.parameters(),lr=learning_rate)
     criterion = torch.nn.MSELoss()
-    huber_loss = torch.nn.SmoothL1Loss(beta=delta)
 
     if wandb_logger:
         if loss_type=="dilate" and alpha>=1-1e-5:
@@ -41,8 +40,11 @@ def train_model(net, loss_type, learning_rate, trainloader, validloader, device,
                 loss_mse = criterion(target,outputs)
                 loss = loss_mse
 
-            elif loss_type == 'huber':
-                loss = huber_loss(outputs, target)                   
+            elif (loss_type == 'rrmse'):
+                mse_loss = torch.nn.functional.mse_loss(outputs, target, reduction='mean')
+                target_mean_squared = torch.mean(target**2)
+                loss_rrmse = torch.sqrt(mse_loss / target_mean_squared)
+                loss = loss_rrmse                    
  
             if (loss_type=='dilate'):    
                 loss, loss_shape, loss_temporal = dilate_loss(target,outputs,alpha, gamma, device)             
@@ -147,9 +149,9 @@ def eval_model(net, loader, device, data_type):
     return final_mse, final_dtw, final_tdi, final_hausdorff, final_ramp
 
 
-def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainloader, 
+def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_rrmse, net_gru_dtw, trainloader, 
                    validloader, testloader, device, n_epochs, 
-                   gamma, alpha, wandb_logger, data, eval_every, net_gru_huber=None):
+                   gamma, alpha, wandb_logger, data, eval_every):
     if training:
         print("-"*130)
         print("TRAINING")
@@ -204,30 +206,29 @@ def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainload
             data_type=data,
             print_every=eval_every,
             )
-        if net_gru_huber is not None:
-                    print("-"*130)
-                    print("Huber")
-                    train_model(
-                        net=net_gru_huber,
-                        loss_type='huber',
-                        learning_rate=0.001,
-                        trainloader=trainloader,
-                        validloader=validloader,
-                        device=device,
-                        epochs=n_epochs, 
-                        gamma=gamma, 
-                        alpha=1,
-                        verbose=1,
-                        wandb_logger=wandb_logger,
-                        data_type=data,
-                        print_every=eval_every,
-                        delta=1.0,
-                        )
-                    torch.save(net_gru_huber.state_dict(), 'weights_models/net_gru_huber.pth')
-        
+
+        print("-"*130)
+        print("RRMSE")
+        train_model(
+            net=net_gru_rrmse,
+            loss_type='rrmse',
+            learning_rate=0.001,
+            trainloader=trainloader,
+            validloader=validloader,
+            device=device,
+            epochs=n_epochs, 
+            gamma=gamma, 
+            alpha=1,
+            verbose=1,
+            wandb_logger=wandb_logger,
+            data_type=data,
+            print_every=eval_every,
+            )
+    
         torch.save(net_gru_dilate.state_dict(), 'weights_models/net_gru_dilate.pth')
         torch.save(net_gru_mse.state_dict(), 'weights_models/net_gru_mse.pth')
         torch.save(net_gru_dtw.state_dict(), 'weights_models/net_gru_dtw.pth')
+        torch.save(net_gru_rrmse.state_dict(), 'weights_models/net_gru_rrmse.pth')
 
     else:
         print("-"*130)
@@ -235,19 +236,17 @@ def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainload
         net_gru_dilate.load_state_dict(torch.load('weights_models/net_gru_dilate.pth'))
         net_gru_mse.load_state_dict(torch.load('weights_models/net_gru_mse.pth'))
         net_gru_dtw.load_state_dict(torch.load('weights_models/net_gru_dtw.pth'))
+        net_gru_rrmse.load_state_dict(torch.load('weights_models/net_gru_rrmse.pth'))
 
         net_gru_dilate.eval()
         net_gru_mse.eval()
         net_gru_dtw.eval()
-
-        if net_gru_huber is not None:
-            net_gru_huber.load_state_dict(torch.load('weights_models/net_gru_huber.pth'))
-            net_gru_huber.eval()
+        net_gru_rrmse.eval()
 
     dilate_mse, dilate_dtw, dilate_tdi, dilate_hausdorff, dilate_ramp= eval_model(net_gru_dilate, testloader, device, data_type=data)
     mse_mse, mse_dtw, mse_tdi, mse_hausdorff, mse_ramp = eval_model(net_gru_mse, testloader, device, data_type=data)
     dtw_mse, dtw_dtw, dtw_tdi, dtw_hausdorff, dtw_ramp = eval_model(net_gru_dtw, testloader, device, data_type=data)
-    huber_mse, huber_dtw, huber_tdi, huber_hausdorff, huber_ramp = eval_model(net_gru_huber, testloader, device, data_type=data)
+    rrmse_mse, rrmse_dtw, rrmse_tdi, rrmse_hausdorff, rrmse_ramp = eval_model(net_gru_rrmse, testloader, device, data_type=data)
     
     print("-"*130)
     print("EVALUATION")
@@ -273,12 +272,12 @@ def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_dtw, trainload
         ' hausdorff= ', dtw_hausdorff ,
         ' ramp= ', dtw_ramp) 
     print("-"*130)
-    print("Eval Huber")
-    print('mse= ', huber_mse ,
-        ' dtw= ', huber_dtw ,
-        ' tdi= ', huber_tdi,
-        ' hausdorff= ', huber_hausdorff ,
-        ' ramp= ', huber_ramp) 
+    print("Eval RRMSE")
+    print('mse= ', rrmse_mse ,
+        ' dtw= ', rrmse_dtw ,
+        ' tdi= ', rrmse_tdi,
+        ' hausdorff= ', rrmse_hausdorff ,
+        ' ramp= ', rrmse_ramp) 
     print("-"*130)
 
 

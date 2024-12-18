@@ -34,12 +34,14 @@ def plot_preds(X_train, y_train, preds, save_path="figures", file_name="plot.png
     plt.show()
 
 
-def plot_all(net_gru_dilate, net_gru_mse, net_gru_dtw, testloader, data):
+def plot_all(net_gru_dilate, net_gru_mse, net_gru_dtw, net_gru_rrmse, testloader, data):
     gen_test = iter(testloader)
     batches_to_process = 2 
 
     for k in range(batches_to_process):
         if data=="traffic":
+            test_inputs, test_targets = next(gen_test)
+        elif data=="power":
             test_inputs, test_targets = next(gen_test)
         else:
             test_inputs, test_targets, _ = next(gen_test)
@@ -50,23 +52,25 @@ def plot_all(net_gru_dilate, net_gru_mse, net_gru_dtw, testloader, data):
         batch_size = test_inputs.size(0)
         random_indices = torch.randint(0, batch_size, (1,)) 
 
-        preds = {"MSE": [], "DILATE": [], "sDTW": []}
+        preds = {"MSE": [], "DILATE": [], "sDTW": [], "RRMSE": []}
 
         with torch.no_grad():
             preds_mse_batch = net_gru_mse(test_inputs).squeeze(-1).detach().numpy()
             preds_dilate_batch = net_gru_dilate(test_inputs).squeeze(-1).detach().numpy()
             preds_dtw_batch = net_gru_dtw(test_inputs).squeeze(-1).detach().numpy()
+            preds_rrmse_batch = net_gru_rrmse(test_inputs).squeeze(-1).detach().numpy()
             i=0
             for ind in random_indices:
                 preds["MSE"].append(preds_mse_batch[ind])
                 preds["DILATE"].append(preds_dilate_batch[ind])
                 preds["sDTW"].append(preds_dtw_batch[ind])
+                preds["RRMSE"].append(preds_rrmse_batch[ind])
                 X_true = test_inputs[ind].squeeze(-1).numpy()
                 y_true = test_targets[ind].squeeze(-1).numpy()
                 plot_preds(
                     X_true, 
                     y_true, 
-                    {"MSE": preds["MSE"][-1], "DILATE": preds["DILATE"][-1], "sDTW": preds["sDTW"][-1]},
+                    {"MSE": preds["MSE"][-1], "DILATE": preds["DILATE"][-1], "sDTW": preds["sDTW"][-1], "RRMSE": preds["RRMSE"][-1]},
                     save_path="figures/predictions", 
                     file_name=f"time_series_plot_{(i,k)}_{data}.png"
                 )
