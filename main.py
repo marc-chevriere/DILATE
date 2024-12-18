@@ -29,6 +29,7 @@ def opts() -> argparse.ArgumentParser:
     parser.add_argument('--viz', action='store_true', help="Enable visualization")
     parser.add_argument('--no-viz', dest='viz', action='store_false', help="Disable visualization")
     parser.add_argument('--eval_every', type=int, default="5")
+    parser.add_argument('--huber', type=str, default=False)
     
     args = parser.parse_args()
     args = parser.parse_args()
@@ -131,6 +132,11 @@ def main():
         decoder_dtw = DecoderRNN(input_size=1, hidden_size=128, num_grulstm_layers=1,fc_units=16, output_size=1).to(device)
         net_gru_dtw = Net_GRU(encoder_dtw,decoder_dtw, output_length, device).to(device)
 
+        if args.huber:
+            encoder_huber = EncoderRNN(input_size=1, hidden_size=128, num_grulstm_layers=1, batch_size=batch_size).to(device)
+            decoder_huber = DecoderRNN(input_size=1, hidden_size=128, num_grulstm_layers=1,fc_units=16, output_size=1).to(device)
+            net_gru_huber = Net_GRU(encoder_dtw,decoder_dtw, output_length, device).to(device)
+
         compare_models(
             training=args.train, 
             net_gru_dilate=net_gru_dilate, 
@@ -145,7 +151,8 @@ def main():
             alpha=alpha,
             wandb_logger=wandb_logger,
             data=args.data,
-            eval_every=args.eval_every
+            eval_every=args.eval_every,
+            net_gru_huber=net_gru_huber,
         )
 
         if args.viz:
