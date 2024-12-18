@@ -135,7 +135,7 @@ def main():
         if args.huber:
             encoder_huber = EncoderRNN(input_size=1, hidden_size=128, num_grulstm_layers=1, batch_size=batch_size).to(device)
             decoder_huber = DecoderRNN(input_size=1, hidden_size=128, num_grulstm_layers=1,fc_units=16, output_size=1).to(device)
-            net_gru_huber = Net_GRU(encoder_dtw,decoder_dtw, output_length, device).to(device)
+            net_gru_huber = Net_GRU(encoder_huber,decoder_huber, output_length, device).to(device)
 
         compare_models(
             training=args.train, 
