@@ -91,7 +91,8 @@ def train_model(net, loss_type, learning_rate, trainloader, validloader, device,
             values_loss = []
             with torch.no_grad():
                 for val_data in validloader:
-                    val_inputs, val_target = val_data
+                    val_inputs = val_data[0]
+                    val_target = val_data[1]
                     val_inputs = val_inputs.to(torch.float32).to(device)
                     val_target = val_target.to(torch.float32).to(device)
 
