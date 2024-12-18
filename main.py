@@ -63,7 +63,7 @@ def main():
 
     if args.gamma == "choice":
 
-        gammas = [0.001, 0.01, 0.1, 1, 10]
+        gammas = [0.0001, 0.01, 0.1, 1]
         metrics_gammas = compare_gammas(
             gammas=gammas,
             output_length=output_length, 
