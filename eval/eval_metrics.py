@@ -3,15 +3,6 @@ import numpy as np
 import ruptures as rpt
 from ruptures.metrics import hausdorff
 
-def detect_anomalies(ts, threshold=3):
-    mean = torch.mean(ts)
-    std = torch.std(ts)
-    anomalies = torch.where((ts > mean + threshold * std) | (ts < mean - threshold * std))[0]
-    last_index = torch.tensor([len(ts) - 1], dtype=torch.long)
-    first_index = torch.tensor([0], dtype=torch.long)
-    anomalies = torch.cat((first_index, anomalies, last_index))
-    
-    return anomalies
 
 def synthetic_hausdorff_distances(ts_0, true, bkp_1):
     ts_0 = ts_0.cpu().numpy()
@@ -31,16 +22,34 @@ def synthetic_hausdorff_distances(ts_0, true, bkp_1):
 
     return np.array(hausdorff_distances).mean()
 
+def detect_anomalies(ts, threshold=3):
+    device = ts.device  # Détecte automatiquement l'appareil du tenseur
+    mean = torch.mean(ts)
+    std = torch.std(ts)
+    anomalies = torch.where((ts > mean + threshold * std) | (ts < mean - threshold * std))[0]
+    last_index = torch.tensor([len(ts) - 1], dtype=torch.long, device=device)
+    first_index = torch.tensor([0], dtype=torch.long, device=device)
+    anomalies = torch.cat((first_index, anomalies, last_index))
+    
+    return anomalies
+
 def traffic_hausdorff_distances(ts_0, true, preds):
-    hausdorff_distances = []
+    device = ts_0.device  
     true_ts = torch.cat((ts_0, true), axis=1)
     pred_ts = torch.cat((ts_0, preds), axis=1)
     batch_size, _, _ = true_ts.shape
+
+    hausdorff_distances = []
     for i in range(batch_size):
         anomalies_true = detect_anomalies(true_ts[i])
-        anomalies_preds =  detect_anomalies(pred_ts[i])
-        hausdorff_dist = hausdorff(anomalies_true.cpu().numpy(), anomalies_preds.cpu().numpy())
+        anomalies_preds = detect_anomalies(pred_ts[i])
+        
+        anomalies_true_np = anomalies_true.cpu().numpy()
+        anomalies_preds_np = anomalies_preds.cpu().numpy()
+        
+        hausdorff_dist = hausdorff(anomalies_true_np, anomalies_preds_np)
         hausdorff_distances.append(hausdorff_dist)
+    
     return np.array(hausdorff_distances).mean()
 
 
