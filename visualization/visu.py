@@ -65,8 +65,8 @@ def plot_all(net_gru_dilate, net_gru_mse, net_gru_dtw, net_gru_rrmse, testloader
                 preds["DILATE"].append(preds_dilate_batch[ind])
                 preds["sDTW"].append(preds_dtw_batch[ind])
                 preds["RRMSE"].append(preds_rrmse_batch[ind])
-                X_true = test_inputs[ind].squeeze(-1).numpy()
-                y_true = test_targets[ind].squeeze(-1).numpy()
+                X_true = test_inputs[ind].squeeze(-1).cpu().numpy()
+                y_true = test_targets[ind].squeeze(-1).cpu().numpy()
                 plot_preds(
                     X_true, 
                     y_true, 
