@@ -19,7 +19,7 @@ def opts() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default="synthetic", help="Dataset to use: 'synthetic', 'traffic' or 'power'")
     parser.add_argument('--path_data', type=str, default=None, help="Path to dataset to use: 'traffic' or 'power'")
-    parser.add_argument('--stride_traffic', type=int, default="30")
+    parser.add_argument('--stride_traffic', type=int, default="20")
     parser.add_argument('--n_epochs', type=int, default=3, help="Number of epochs")
     parser.add_argument('--logger', action='store_true', help="Enable logging to wandb")
     parser.add_argument('--no-logger', dest='logger', action='store_false', help="Disable logging to wandb")
