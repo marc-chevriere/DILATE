@@ -53,7 +53,7 @@ def main():
         output_length = 24
         path_data = args.path_data or "data/traffic/traffic.txt"
         batch_size=64
-        stride = args.stride
+        stride = args.stride_traffic
         trainloader, validloader, testloader = get_traffic_data(path_data=path_data, stride=stride, 
                                                                 batch_size=batch_size, output_length=output_length)
         
