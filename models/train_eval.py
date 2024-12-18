@@ -33,7 +33,8 @@ def train_model(net, loss_type, learning_rate, trainloader, validloader, device,
     for epoch in range(epochs): 
         # Entraînement
         for i, data in enumerate(trainloader, 0):
-            inputs, target = data
+            inputs = data[0]
+            target = data[1]
             inputs = inputs.to(torch.float32).to(device)
             target = target.to(torch.float32).to(device)                    
 
