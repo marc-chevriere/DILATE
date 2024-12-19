@@ -4,11 +4,11 @@ import ruptures as rpt
 from ruptures.metrics import hausdorff
 
 
-def synthetic_hausdorff_distances(ts_0, true, bkp_1):
+def synthetic_hausdorff_distances(ts_0, preds, bkp_1):
     ts_0 = ts_0.cpu().numpy()
-    true = true.cpu().numpy()
+    preds = preds.cpu().numpy()
     bkp_1 = bkp_1.cpu().numpy()
-    ts_concat = np.concatenate((ts_0, true), axis=1)
+    ts_concat = np.concatenate((ts_0, preds), axis=1)
     batch_size, sequence_length, _ = ts_concat.shape
     hausdorff_distances = []
 
@@ -19,7 +19,6 @@ def synthetic_hausdorff_distances(ts_0, true, bkp_1):
         predicted_bkp = np.array(algo.predict(n_bkps=1))
         hausdorff_dist = hausdorff(true_bkp, predicted_bkp)
         hausdorff_distances.append(hausdorff_dist)
-
     return np.array(hausdorff_distances).mean()
 
 def detect_anomalies(ts, threshold=3):

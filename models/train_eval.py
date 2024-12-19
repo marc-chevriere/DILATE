@@ -248,7 +248,7 @@ def eval_model(net, loader, device, data_type):
 
             if data_type=="synthetic":
                 bkps = data[2]
-                loss_hausdorff = synthetic_hausdorff_distances(inputs, target, bkps)
+                loss_hausdorff = synthetic_hausdorff_distances(ts_0=inputs, preds=outputs, bkp_1=bkps)
                 losses_hausdorff.append( loss_hausdorff.item() )
             elif data_type=="traffic":
                 loss_hausdorff = traffic_hausdorff_distances(inputs, target, outputs)
@@ -356,10 +356,11 @@ def compare_models(training, net_gru_dilate, net_gru_mse, net_gru_rrmse, net_gru
     else:
         print("-"*130)
         print("LOADING MODELS")
-        net_gru_dilate.load_state_dict(torch.load('weights_models/net_gru_dilate.pth'))
-        net_gru_mse.load_state_dict(torch.load('weights_models/net_gru_mse.pth'))
-        net_gru_dtw.load_state_dict(torch.load('weights_models/net_gru_dtw.pth'))
-        net_gru_rrmse.load_state_dict(torch.load('weights_models/net_gru_rrmse.pth'))
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        net_gru_dilate.load_state_dict(torch.load('weights_models/net_gru_dilate.pth', map_location=device))
+        net_gru_mse.load_state_dict(torch.load('weights_models/net_gru_mse.pth', map_location=device))
+        net_gru_dtw.load_state_dict(torch.load('weights_models/net_gru_dtw.pth', map_location=device))
+        net_gru_rrmse.load_state_dict(torch.load('weights_models/net_gru_rrmse.pth', map_location=device))
 
         net_gru_dilate.eval()
         net_gru_mse.eval()
