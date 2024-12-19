@@ -12,7 +12,8 @@ Here are the main parameters you can use with the `main.py` script:
 
 - **Dataset**:  
   - `--data synthetic`: uses a synthetic dataset.
-  - `--data traffic`: uses the traffic dataset (requires a path with `--path_traffic "/path/to/traffic.txt"`).
+  - `--data traffic`: uses the traffic dataset (requires a path with `--path_data "/path/to/traffic.txt"`).
+  - `--data power`: uses the electricity dataset (requires a path with `--path_data "/path/to/traffic.txt"`).
   - Default: `synthetic`.
 
 - **Visualization**: 
