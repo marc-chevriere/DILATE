@@ -53,7 +53,7 @@ python main.py --data synthetic --n_epochs 5 --gamma 0.01 --alpha choice --viz
 ### 3. Compare Models with Fixed Gamma and Alpha
 After determining the optimal values, compare the performance of models trained with different metrics:  
 ```bash
-python main.py --data synthetic --n_epochs 5 --gamma 0.01 --alpha 0.2 --viz
+python main.py --data synthetic --n_epochs 5 --gamma 0.01 --alpha 0.2 --viz --train
 ```
 
 If models are already trained, disable training to speed up evaluation:  
